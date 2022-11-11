@@ -6,8 +6,7 @@ use chainlib::core::{
     PrivateKey,
     PublicKey,
     Address,
-    transaction::Transaction,
-    ethereum_types::U256,
+    Transaction,
 };
 
 mod btc {
@@ -48,7 +47,6 @@ mod btc {
 
     #[test]
     fn btc_tx_gen() {
-
         let signing_key = BitcoinPrivateKey::<Testnet>::from_str(privkey_1).unwrap();
 
         let txid = "31ccb320ed15ac6cdf57381ce23e3d4b5601ad971eea800d131f1d6e7c2dd559";
@@ -91,7 +89,6 @@ mod btc {
 
     #[test]
     fn omni_tx_gen() {
-
         let signing_key = BitcoinPrivateKey::<Testnet>::from_str(privkey_1).unwrap();
         
         let txid = "31ccb320ed15ac6cdf57381ce23e3d4b5601ad971eea800d131f1d6e7c2dd559";
@@ -160,47 +157,93 @@ mod btc {
 }
 
 mod eth {
-    use super::*;
+    use std::str::FromStr;
+    use chainlib::core::{
+        PrivateKey,
+        Address,
+        Transaction,
+        ethereum_types::U256
+    };
     use chainlib::ethereum::{
-        private_key::EthereumPrivateKey,
-        public_key::EthereumPublicKey,
-        address::EthereumAddress,
-        Mainnet as EthMainnet,
-        amount::EthereumAmount,
-        format::EthereumFormat,
-        transaction::EthereumTransactionParameters,
-        transaction::EthereumTransaction,
+        EthereumPrivateKey,
+        EthereumPublicKey,
+        EthereumAddress,
+        Goerli,
+        Mainnet,
+        EthereumAmount,
+        EthereumFormat,
+        EthereumTransactionParameters,
+        EthereumTransaction,
+        encode_transfer,
     };
     
     #[test]
     fn eth_tx_gen() {
-
-        let mut rng = rand::thread_rng();
-        
-        let signing_key = EthereumPrivateKey::new(&mut rng).unwrap();
-        let to_key = EthereumPrivateKey::new(&mut rng).unwrap();
-        
-        let format = EthereumFormat::Standard;
-        
-        let from = signing_key.to_address(&format).unwrap();
-        let to = to_key.to_address(&format).unwrap();
-
+        let to = "0x47e9feFa599905371827d5188B0f4E610B765707";
+        let to = EthereumAddress::from_str(to).unwrap();
         let value = EthereumAmount::from_eth("0.001").unwrap();
+
+        let gas = U256::from(300000);
         let gas_price = EthereumAmount::from_gwei("150").unwrap();
+        let nonce = U256::from(33);
 
         let params = EthereumTransactionParameters {
             receiver: to,
             amount: value,
-            gas: U256::from(300000),
+            gas: gas,
             gas_price: gas_price,
-            nonce: U256::from(33),
+            nonce: nonce,
             data: vec![]
         };
 
         let mut tx =
-            EthereumTransaction::<EthMainnet>::new(&params).unwrap();
+            EthereumTransaction::<Mainnet>::new(&params).unwrap();
 
-        let stream = tx.sign_with_private_key(&signing_key).unwrap();
+        // compute 'signature' and 'recid' from elsewhere 
+        let signature: Vec<u8> = vec![];
+        let recid: u8 = 0;
+
+        // insert 'sig' and 'recid' into this tx
+        let stream = tx.sign(signature, recid).unwrap();
+        
+        let tx_hex = hex::encode(&stream);
+        
+        println!("tx hex = {}", tx_hex);
+    }
+
+    #[test]
+    fn eth_erc20_tx_gen() {
+        let erc20_contract = "0x47e9feFa599905371827d5188B0f4E610B765707";
+        let erc20_token_recipient = "0x0c9E0e96eBCce0636C7da29A28FABD1ce37B593b";
+        
+        let erc20_contract = EthereumAddress::from_str(erc20_contract).unwrap();
+        let erc20_token_recipient = EthereumAddress::from_str(erc20_token_recipient).unwrap();
+        let eth_value = EthereumAmount::from_eth("0.001").unwrap();
+        let token_value = U256::from(1000);
+
+        let gas = U256::from(300000);
+        let gas_price = EthereumAmount::from_gwei("150").unwrap();
+        let nonce = U256::from(33);
+        
+        let data = encode_transfer("transfer", &erc20_token_recipient, token_value);
+        
+        let params = EthereumTransactionParameters {
+            receiver: erc20_contract,
+            amount: eth_value,
+            gas: gas,
+            gas_price: gas_price,
+            nonce: nonce,
+            data: data
+        };
+
+        let mut tx =
+            EthereumTransaction::<Mainnet>::new(&params).unwrap();
+
+        // compute 'sig' and 'recid' elsewhere
+        let signature: Vec<u8> = vec![];
+        let recid: u8 = 0;
+        
+        let stream = tx.sign(signature, recid).unwrap();
         
         let tx_hex = hex::encode(&stream);
         
@@ -228,7 +271,6 @@ mod fil {
 
     #[test]
     fn fil_tx_gen() {
-
         let signing_key = FilecoinPrivateKey::new_bls().unwrap();
         let to_key = FilecoinPrivateKey::new_secp256k1().unwrap();
 
