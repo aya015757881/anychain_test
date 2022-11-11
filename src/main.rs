@@ -3,8 +3,6 @@ use chainlib::core::{
     PrivateKey,
     PublicKey,
     Address,
-};
-use chainlib::core::{
     transaction::Transaction,
     ethereum_types::U256,
 };
@@ -37,13 +35,7 @@ use chainlib::ethereum::{
     transaction::EthereumTransactionParameters,
     transaction::EthereumTransaction,
 };
-use chainlib::filecoin::{
-    private_key::FilecoinPrivateKey,
-    public_key::FilecoinPublicKey,
-    address::FilecoinAddress,
-    amount::FilecoinAmount,
-    format::FilecoinFormat,
-};
+
 use rand::Rng;
 
 /// these keys and addresses are for Bitcoin testnet
@@ -100,15 +92,15 @@ mod tests {
         let output_change =
             BitcoinTransactionOutput::new(&from, change).unwrap();
 
-        let tx_params = BitcoinTransactionParameters::new(
+        let params = BitcoinTransactionParameters::new(
             vec![input],
             vec![output_transfer, output_change],
         ).unwrap();
 
-        let mut tx = BitcoinTransaction::new(&tx_params).unwrap();
+        let mut tx = BitcoinTransaction::new(&params).unwrap();
         let stream = tx.sign_with_private_key(&signing_key).unwrap();
 
-        println!("tx = \n{}\n\n", tx);
+        println!("tx hex = {}", hex::encode(&stream));
     }
 
     #[test]
@@ -167,17 +159,17 @@ mod tests {
         ).unwrap();
 
         // construct the parameters
-        let tx_params = BitcoinTransactionParameters::new(
+        let params = BitcoinTransactionParameters::new(
             vec![input],
             vec![output_change, output_data, output_reference],
         ).unwrap();
 
         // construct the tx
-        let mut tx = BitcoinTransaction::new(&tx_params).unwrap();
+        let mut tx = BitcoinTransaction::new(&params).unwrap();
 
         let stream = tx.sign_with_private_key(&signing_key).unwrap();
 
-        println!("tx = \n{}\n\n", tx);
+        println!("tx hex = {}", hex::encode(&stream));
     }
 
     #[test]
@@ -208,9 +200,9 @@ mod tests {
         let mut tx =
             EthereumTransaction::<EthMainnet>::new(&params).unwrap();
 
-        let tx = tx.sign_with_private_key(&signing_key).unwrap();
+        let stream = tx.sign_with_private_key(&signing_key).unwrap();
         
-        let tx_hex = hex::encode(&tx);
+        let tx_hex = hex::encode(&stream);
         
         println!("tx hex = {}", tx_hex);
     }
@@ -218,9 +210,48 @@ mod tests {
     #[test]
     fn fil_tx_gen() {
 
+        use chainlib::filecoin::{
+            private_key::FilecoinPrivateKey,
+            public_key::FilecoinPublicKey,
+            address::FilecoinAddress,
+            format::FilecoinFormat,
+            amount::{
+                FilecoinAmount,
+                FilecoinAmountConverter,
+            },
+            transaction::{
+                FilecoinTransactionParameters,
+                FilecoinTransaction,
+                RawBytes,
+            },
+        };
+        
+        let signing_key = FilecoinPrivateKey::new_bls().unwrap();
+        let to_key = FilecoinPrivateKey::new_secp256k1().unwrap();
 
+        let format = FilecoinFormat::Base32;
+        
+        let from = signing_key.to_address(&format).unwrap();
+        let to = to_key.to_address(&format).unwrap();
+        let value = FilecoinAmount::from_fil("0.01");
 
+        let params = FilecoinTransactionParameters {
+            version: 0,
+            from: from,
+            to: to,
+            sequence: 33,
+            value: value,
+            method_num: 0,
+            params: RawBytes::new(vec![]),
+            gas_limit: 500000,
+            gas_fee_cap: FilecoinAmount::from_nano_fil("10000"),
+            gas_premium: FilecoinAmount::from_nano_fil("1000"),
+        };
 
+        let mut tx = FilecoinTransaction::new(&params).unwrap();
+        
+        let tx_json = tx.sign_with_private_key(&signing_key).unwrap();
 
+        println!("tx json = {}", String::from_utf8(tx_json).unwrap());
     }
 }
