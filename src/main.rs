@@ -1,3 +1,6 @@
+mod rpc;
+
+use rand::Rng;
 use std::str::FromStr;
 use chainlib::core::{
     PrivateKey,
@@ -6,59 +9,42 @@ use chainlib::core::{
     transaction::Transaction,
     ethereum_types::U256,
 };
-use chainlib::bitcoin::{
-    private_key::BitcoinPrivateKey,
-    public_key::BitcoinPublicKey,
-    amount::BitcoinAmount,
-    network::{
-        Testnet,
-        Mainnet,
-        BitcoinNetwork,
-    },
-    transaction::{
-        SignatureHash,
-        BitcoinTransaction,
-        BitcoinTransactionInput,
-        BitcoinTransactionOutput,
-    },
-    transaction::BitcoinTransactionParameters,
-    BitcoinAddress,
-    BitcoinFormat,
-};
-use chainlib::ethereum::{
-    private_key::EthereumPrivateKey,
-    public_key::EthereumPublicKey,
-    address::EthereumAddress,
-    Mainnet as EthMainnet,
-    amount::EthereumAmount,
-    format::EthereumFormat,
-    transaction::EthereumTransactionParameters,
-    transaction::EthereumTransaction,
-};
 
-use rand::Rng;
-
-/// these keys and addresses are for Bitcoin testnet
-static privkey_1: &str = "cTuqvkNTYsrbcUNPC2XYoBy8XpnEc8UHEdYqcLLqjgvg83jfNexE";
-static pubkey_1: &str = "03d75ab088dde3629a1271a1f7bb2f614da7876a6c368b87434f4c9c1530d5d81d";
-static bech32_1: &str = "tb1qkqu2z204tkdqvmdcy5y9j7nj09r8gy2hpkq8eq";
-static p2pkh_1: &str = "mwaj4WJb12aLM2dDxVVroGZrEoAc4S9fcW";
-static p2sh_p2wpkh_1: &str = "2N6d4JweCd6NcMDwMZ83qZkYjyrBK3sx1hR";
-
-static privkey_2: &str = "cQu5wkqTQwQbk8msF626q9U35MS1iUDxhNg1mUqNCyYM6iuYGAR3";
-static pubkey_2: &str = "03b7f0bd964888f4dfda6ec11a7fcca9b5166dbea25677604d3d45e2c01d8dfb47";
-static bech32_2: &str = "tb1qksn24p2fp7t8cer50fnc8k63ka5erl0x2msdq3";
-static p2pkh_2: &str = "mwwWF9i6ckyP4sQUNaRcQ5sjh46rRnKiQG";
-static p2sh_p2wpkh_2: &str = "2MyhacsFMbzHvAwAh2VvKLY3yC7GXUuij9c";
-
-static faucet: &str = "moneyqMan7uh8FqdCA2BV5yZ8qVrc9ikLP";
-
-fn main() {
-
-}
-
-mod tests {
+mod btc {
     use super::*;
+    use chainlib::bitcoin::{
+        private_key::BitcoinPrivateKey,
+        public_key::BitcoinPublicKey,
+        amount::BitcoinAmount,
+        network::{
+            Testnet,
+            Mainnet,
+            BitcoinNetwork,
+        },
+        transaction::{
+            SignatureHash,
+            BitcoinTransaction,
+            BitcoinTransactionInput,
+            BitcoinTransactionOutput,
+        },
+        transaction::BitcoinTransactionParameters,
+        BitcoinAddress,
+        BitcoinFormat,
+    };
+
+    static privkey_1: &str = "cTuqvkNTYsrbcUNPC2XYoBy8XpnEc8UHEdYqcLLqjgvg83jfNexE";
+    static pubkey_1: &str = "03d75ab088dde3629a1271a1f7bb2f614da7876a6c368b87434f4c9c1530d5d81d";
+    static bech32_1: &str = "tb1qkqu2z204tkdqvmdcy5y9j7nj09r8gy2hpkq8eq";
+    static p2pkh_1: &str = "mwaj4WJb12aLM2dDxVVroGZrEoAc4S9fcW";
+    static p2sh_p2wpkh_1: &str = "2N6d4JweCd6NcMDwMZ83qZkYjyrBK3sx1hR";
+
+    static privkey_2: &str = "cQu5wkqTQwQbk8msF626q9U35MS1iUDxhNg1mUqNCyYM6iuYGAR3";
+    static pubkey_2: &str = "03b7f0bd964888f4dfda6ec11a7fcca9b5166dbea25677604d3d45e2c01d8dfb47";
+    static bech32_2: &str = "tb1qksn24p2fp7t8cer50fnc8k63ka5erl0x2msdq3";
+    static p2pkh_2: &str = "mwwWF9i6ckyP4sQUNaRcQ5sjh46rRnKiQG";
+    static p2sh_p2wpkh_2: &str = "2MyhacsFMbzHvAwAh2VvKLY3yC7GXUuij9c";
+
+    static faucet: &str = "moneyqMan7uh8FqdCA2BV5yZ8qVrc9ikLP";
 
     #[test]
     fn btc_tx_gen() {
@@ -171,7 +157,21 @@ mod tests {
 
         println!("tx hex = {}", hex::encode(&stream));
     }
+}
 
+mod eth {
+    use super::*;
+    use chainlib::ethereum::{
+        private_key::EthereumPrivateKey,
+        public_key::EthereumPublicKey,
+        address::EthereumAddress,
+        Mainnet as EthMainnet,
+        amount::EthereumAmount,
+        format::EthereumFormat,
+        transaction::EthereumTransactionParameters,
+        transaction::EthereumTransaction,
+    };
+    
     #[test]
     fn eth_tx_gen() {
 
@@ -206,26 +206,29 @@ mod tests {
         
         println!("tx hex = {}", tx_hex);
     }
+}
+
+mod fil {
+    use super::*;
+    use chainlib::filecoin::{
+        private_key::FilecoinPrivateKey,
+        public_key::FilecoinPublicKey,
+        address::FilecoinAddress,
+        format::FilecoinFormat,
+        amount::{
+            FilecoinAmount,
+            FilecoinAmountConverter,
+        },
+        transaction::{
+            FilecoinTransactionParameters,
+            FilecoinTransaction,
+            RawBytes,
+        },
+    };
 
     #[test]
     fn fil_tx_gen() {
 
-        use chainlib::filecoin::{
-            private_key::FilecoinPrivateKey,
-            public_key::FilecoinPublicKey,
-            address::FilecoinAddress,
-            format::FilecoinFormat,
-            amount::{
-                FilecoinAmount,
-                FilecoinAmountConverter,
-            },
-            transaction::{
-                FilecoinTransactionParameters,
-                FilecoinTransaction,
-                RawBytes,
-            },
-        };
-        
         let signing_key = FilecoinPrivateKey::new_bls().unwrap();
         let to_key = FilecoinPrivateKey::new_secp256k1().unwrap();
 
@@ -254,4 +257,8 @@ mod tests {
 
         println!("tx json = {}", String::from_utf8(tx_json).unwrap());
     }
+}
+
+fn main() {
+
 }

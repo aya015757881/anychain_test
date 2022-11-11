@@ -9,3 +9,4 @@ edition = "2021"
 chainlib = { git = "https://github.com/taiyi-research-institute/chainlib.git" }
 hex = "0.4.3"
 rand = "0.8.5"
+ureq = "2.5.0"
