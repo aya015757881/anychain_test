@@ -1,5 +1,6 @@
 mod rpc;
 
+use self::rpc::Node;
 use rand::Rng;
 use std::str::FromStr;
 use chainlib::core::{
@@ -44,6 +45,7 @@ mod btc {
     static p2sh_p2wpkh_2: &str = "2MyhacsFMbzHvAwAh2VvKLY3yC7GXUuij9c";
 
     static faucet: &str = "moneyqMan7uh8FqdCA2BV5yZ8qVrc9ikLP";
+    static omni_core_address: &str = "2N8MynK9PhChmZ1r6JsAKzfxiJb2tSsaupJ";
 
     #[test]
     fn btc_tx_gen() {
@@ -89,19 +91,25 @@ mod btc {
 
     #[test]
     fn omni_tx_gen() {
-        let signing_key = BitcoinPrivateKey::<Testnet>::from_str(privkey_1).unwrap();
+        let signing_key = BitcoinPrivateKey::<Testnet>::from_str(privkey_2).unwrap();
         
-        let txid = "31ccb320ed15ac6cdf57381ce23e3d4b5601ad971eea800d131f1d6e7c2dd559";
+        let txid = "fd782eeff41205f618ea613986e85dc2273b7f37db3d5a5968e3f985b5499cfc";
         let txid = hex::decode(txid).unwrap();
 
+        let txid1 = "ba2bcfed866d89c59110901ee513ffaba1ab6c8e3b99ab8d386c0f8fc0f8a38b";
+        let txid1 = hex::decode(txid1).unwrap();
+
         // indicates the sender of OMNI coins
-        let from = BitcoinAddress::<Testnet>::from_str(p2pkh_1).unwrap();
+        let from = BitcoinAddress::<Testnet>::from_str(p2pkh_2).unwrap();
 
         // indicates the recipient of OMNI coins
-        let to = BitcoinAddress::<Testnet>::from_str(p2pkh_2).unwrap();
+        let to = BitcoinAddress::<Testnet>::from_str(p2pkh_1).unwrap();
         
         // indicates the Bitcoin balance in the address of the sender, which provides the gas fee
-        let balance = BitcoinAmount::from_ubtc(100).unwrap();
+        let balance = BitcoinAmount::from_satoshi(546).unwrap();
+
+        // indicates the Bitcoin balance in the address of the sender, which provides the gas fee
+        let balance1 = BitcoinAmount::from_satoshi(1800).unwrap();
 
         // indicates the amount of Bitcoin required to be sent to the recipient of OMNI coins,
         // as specified in the omni protocol
@@ -111,17 +119,29 @@ mod btc {
         let fee = BitcoinAmount::from_ubtc(10).unwrap();
         
         // indicates the Bitcoin change paid back to the sender
-        let change = balance.sub(value).unwrap().sub(fee).unwrap();
+        let change = balance1.sub(fee).unwrap();
 
         // indicates the amount of OMNI coins to be sent in terms of its basic units
-        let amount = BitcoinAmount::from_ubtc(100).unwrap();
+        let amount = BitcoinAmount::from_mbtc(15).unwrap();
 
         // construct the input (sender address)
         let input = BitcoinTransactionInput::new(
             txid,
-            0,
+            1,
             Some(from.clone()),
             Some(balance),
+            None,
+            None,
+            None,
+            SignatureHash::SIGHASH_ALL
+        ).unwrap();
+
+        // construct the second input (sender address)
+        let input1 = BitcoinTransactionInput::new(
+            txid1,
+            0,
+            Some(from.clone()),
+            Some(balance1),
             None,
             None,
             None,
@@ -143,7 +163,7 @@ mod btc {
 
         // construct the parameters
         let params = BitcoinTransactionParameters::new(
-            vec![input],
+            vec![input, input1],
             vec![output_change, output_data, output_reference],
         ).unwrap();
 
@@ -157,13 +177,8 @@ mod btc {
 }
 
 mod eth {
-    use std::str::FromStr;
-    use chainlib::core::{
-        PrivateKey,
-        Address,
-        Transaction,
-        ethereum_types::U256
-    };
+    use super::*;
+    use chainlib::core::ethereum_types::U256;
     use chainlib::ethereum::{
         EthereumPrivateKey,
         EthereumPublicKey,
@@ -179,40 +194,55 @@ mod eth {
     
     #[test]
     fn eth_tx_gen() {
-        let to = "0x47e9feFa599905371827d5188B0f4E610B765707";
-        let to = EthereumAddress::from_str(to).unwrap();
-        let value = EthereumAmount::from_eth("0.001").unwrap();
+        let eth_node = "https://eth-goerli.g.alchemy.com/v2/fzqj0m1aH-1aBAvLUoEVsdS0rf0qDpmo";
+        let eth_node = Node::new(eth_node);
 
-        let gas = U256::from(300000);
-        let gas_price = EthereumAmount::from_gwei("150").unwrap();
-        let nonce = U256::from(33);
+        // let to = "0x47e9feFa599905371827d5188B0f4E610B765707";
+        // let to = EthereumAddress::from_str(to).unwrap();
+        // let value = EthereumAmount::from_eth("0.001").unwrap();
 
-        let params = EthereumTransactionParameters {
-            receiver: to,
-            amount: value,
-            gas: gas,
-            gas_price: gas_price,
-            nonce: nonce,
-            data: vec![]
-        };
+        // let gas = U256::from(300000);
+        // let gas_price = EthereumAmount::from_gwei("150").unwrap();
+        // let nonce = U256::from(33);
 
-        let mut tx =
-            EthereumTransaction::<Mainnet>::new(&params).unwrap();
+        // let params = EthereumTransactionParameters {
+        //     receiver: to,
+        //     amount: value,
+        //     gas: gas,
+        //     gas_price: gas_price,
+        //     nonce: nonce,
+        //     data: vec![]
+        // };
 
-        // compute 'signature' and 'recid' from elsewhere 
-        let signature: Vec<u8> = vec![];
-        let recid: u8 = 0;
+        // let mut tx =
+        //     EthereumTransaction::<Mainnet>::new(&params).unwrap();
 
-        // insert 'sig' and 'recid' into this tx
-        let stream = tx.sign(signature, recid).unwrap();
+        // // compute 'signature' and 'recid' from elsewhere 
+        // let signature: Vec<u8> = vec![];
+        // let recid: u8 = 0;
+
+        // // insert 'sig' and 'recid' into this tx
+        // let stream = tx.sign(signature, recid).unwrap();
         
-        let tx_hex = hex::encode(&stream);
+        // let tx_hex = hex::encode(&stream);
         
-        println!("tx hex = {}", tx_hex);
+        // println!("tx hex = {}", tx_hex);
+        let req = "{\
+            \"jsonrpc\": \"2.0\",\
+            \"method\": \"eth_gasPrice\",
+            \"params\": [],\
+            \"id\": 18\
+        }";
+
+        let resp = eth_node.request(req);
+        println!("response = {}", resp);
     }
 
     #[test]
     fn eth_erc20_tx_gen() {
+        let eth_node = "https://eth-goerli.g.alchemy.com/v2/fzqj0m1aH-1aBAvLUoEVsdS0rf0qDpmo";
+        let eth_node = Node::new(eth_node);
+
         let erc20_contract = "0x47e9feFa599905371827d5188B0f4E610B765707";
         let erc20_token_recipient = "0x0c9E0e96eBCce0636C7da29A28FABD1ce37B593b";
         
@@ -271,36 +301,48 @@ mod fil {
 
     #[test]
     fn fil_tx_gen() {
-        let signing_key = FilecoinPrivateKey::new_bls().unwrap();
-        let to_key = FilecoinPrivateKey::new_secp256k1().unwrap();
+        let fil_node = "https://api.calibration.node.glif.io/rpc/v1";
+        let fil_node = Node::new(fil_node);
 
-        let format = FilecoinFormat::Base32;
+        // let signing_key = FilecoinPrivateKey::new_bls().unwrap();
+        // let to_key = FilecoinPrivateKey::new_secp256k1().unwrap();
+
+        // let format = FilecoinFormat::Base32;
         
-        let from = signing_key.to_address(&format).unwrap();
-        let to = to_key.to_address(&format).unwrap();
-        let value = FilecoinAmount::from_fil("0.01");
+        // let from = signing_key.to_address(&format).unwrap();
+        // let to = to_key.to_address(&format).unwrap();
+        // let value = FilecoinAmount::from_fil("0.01");
 
-        let params = FilecoinTransactionParameters {
-            version: 0,
-            from: from,
-            to: to,
-            sequence: 33,
-            value: value,
-            method_num: 0,
-            params: RawBytes::new(vec![]),
-            gas_limit: 500000,
-            gas_fee_cap: FilecoinAmount::from_nano_fil("10000"),
-            gas_premium: FilecoinAmount::from_nano_fil("1000"),
-        };
+        // let params = FilecoinTransactionParameters {
+        //     version: 0,
+        //     from: from,
+        //     to: to,
+        //     sequence: 33,
+        //     value: value,
+        //     method_num: 0,
+        //     params: RawBytes::new(vec![]),
+        //     gas_limit: 500000,
+        //     gas_fee_cap: FilecoinAmount::from_nano_fil("10000"),
+        //     gas_premium: FilecoinAmount::from_nano_fil("1000"),
+        // };
 
-        let mut tx = FilecoinTransaction::new(&params).unwrap();
+        // let mut tx = FilecoinTransaction::new(&params).unwrap();
         
-        let tx_json = tx.sign_with_private_key(&signing_key).unwrap();
+        // let tx_json = tx.sign_with_private_key(&signing_key).unwrap();
 
-        println!("tx json = {}", String::from_utf8(tx_json).unwrap());
+        // println!("tx json = {}", String::from_utf8(tx_json).unwrap());
+        let req = "{\
+            \"jsonrpc\": \"2.0\",\
+            \"method\": \"Filecoin.ChainHead\",\
+            \"id\": 1,\
+            \"params\": []\
+        }";
+    
+        let resp = fil_node.request(req);
+        println!("response = {}", resp);
     }
 }
 
 fn main() {
-
+    
 }

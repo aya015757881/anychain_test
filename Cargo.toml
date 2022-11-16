@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chainlib = { git = "https://github.com/taiyi-research-institute/chainlib.git" }
+chainlib = { git = "https://github.com/taiyi-research-institute/chainlib.git", branch = "chainlib-aya" }
 hex = "0.4.3"
 rand = "0.8.5"
-ureq = "2.5.0"
+ureq = { version = "2.5.0", features = ["json"] }
